@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CircularProgressBar">
+        <attr name="arc" format="float" />
+        <attr name="arc_radius" format="dimension" />
+        <attr name="arc_color" format="color" />
+        <attr name="start_angle" format="float" />
+        <attr name="progress_width" format="dimension" />
+        <attr name="progress_color" format="color" />
+        <attr name="max_progress" format="integer" />
+        <attr name="progress" format="integer" />
+        <attr name="show_progress_Text" format="boolean" />
+        <attr name="progress_text_size" format="dimension" />
+    </declare-styleable>
+
+</resources>
