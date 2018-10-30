@@ -21,8 +21,8 @@ import android.view.View;
  */
 public class FreeItemDecoration extends RecyclerView.ItemDecoration {
 
-    private int mDriverWidth = 20;
-    private int mDriverHeight = 20;
+    private int mDriverWidth = 60;
+    private int mDriverHeight = 60;
 
     private boolean hasLeft;
     private boolean hasRight;

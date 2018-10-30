@@ -1,16 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <declare-styleable name="CircularProgressBar">
-        <attr name="arc" format="float" />
-        <attr name="arc_radius" format="dimension" />
-        <attr name="arc_color" format="color" />
-        <attr name="start_angle" format="float" />
-        <attr name="progress_width" format="dimension" />
+    <!--圆形进度条的自定义属性-->
+    <declare-styleable name="CircleProgressBar">
+        <attr name="background_color" format="color" />
+        <attr name="second_progress_color" format="color" />
         <attr name="progress_color" format="color" />
-        <attr name="max_progress" format="integer" />
+        <attr name="max" format="integer" />
+        <attr name="second_progress" format="integer" />
         <attr name="progress" format="integer" />
-        <attr name="show_progress_Text" format="boolean" />
-        <attr name="progress_text_size" format="dimension" />
+        <attr name="radius" format="dimension" />
+        <attr name="progress_width" format="dimension" />
+        <attr name="show_text" format="boolean" />
+        <attr name="text" format="string" />
+        <attr name="text_color" format="color" />
+        <attr name="text_size" format="dimension" />
     </declare-styleable>
 
+    <declare-styleable name="CircleImageView">
+        <!--是否是圆形图片-->
+        <attr name="isCircle" format="boolean" />
+        <!-- 边框宽度-->
+        <attr name="border_width" format="dimension" />
+        <!-- 边框颜色-->
+        <attr name="border_color" format="color" />
+        <!-- 左上角圆角弧度半径-->
+        <attr name="corner_top_left_radius" format="dimension" />
+        <!-- 右上角圆角弧度半径-->
+        <attr name="corner_top_right_radius" format="dimension" />
+        <!-- 左下角圆角弧度半径-->
+        <attr name="corner_bottom_left_radius" format="dimension" />
+        <!-- 右下角圆角弧度半径-->
+        <attr name="corner_bottom_right_radius" format="dimension" />
+        <!-- 为4个角设置统一的弧度半径-->
+        <attr name="corner_radius" format="dimension" />
+        <!-- 圆角类型-->
+        <attr name="corner_type" format="integer">
+            <enum name="arc" value="1" />
+            <enum name="width" value="2" />
+        </attr>
+    </declare-styleable>
 </resources>

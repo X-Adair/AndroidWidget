@@ -10,7 +10,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
-import com.adair.widget.progress.CircularProgressBar;
+import com.adair.widget.CircleProgressBar;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 
@@ -128,7 +128,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
         ImageView mIvContent;
         ImageView mIvDownload;
         FrameLayout mFlDownload;
-        CircularProgressBar mCPBProgress;
+        CircleProgressBar mCPBProgress;
 
         public ImageViewHolder(@NonNull View itemView) {
             super(itemView);

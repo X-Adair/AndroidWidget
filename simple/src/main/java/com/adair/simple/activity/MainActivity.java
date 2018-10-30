@@ -1,46 +1,64 @@
-package com.adair.simple;
+package com.adair.simple.activity;
 
-import android.support.v7.app.AppCompatActivity;
+import android.animation.ObjectAnimator;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
-import android.widget.ProgressBar;
+import android.view.animation.LinearInterpolator;
+import android.widget.Button;
+import android.widget.SeekBar;
 import android.widget.Toast;
 
-import com.adair.widget.layoutManager.GridPagerLayoutManager;
+import com.adair.simple.DownloadInfo;
+import com.adair.simple.FreeItemDecoration;
+import com.adair.simple.ImageAdapter;
+import com.adair.simple.R;
+import com.adair.widget.CircleProgressBar;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
+    @BindView(R.id.btn_1)
+    Button btn1;
 
     private RecyclerView mRecyclerView;
     private ImageAdapter mImageAdapter;
     private List<DownloadInfo> mDownloadInfoList;
 
+    private CircleProgressBar mProgressBar;
+    private SeekBar mSeekBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ButterKnife.bind(this);
         mRecyclerView = findViewById(R.id.recyclerView);
         initRecyclerView();
+        initProgress();
     }
 
 
     private void initRecyclerView() {
-        GridLayoutManager manager = new GridLayoutManager(this, 2, LinearLayoutManager.VERTICAL, false);
+        GridLayoutManager manager = new GridLayoutManager(this, 3, LinearLayoutManager.VERTICAL, false);
 //        GridPagerLayoutManager manager = new GridPagerLayoutManager(1, 1, GridPagerLayoutManager.HORIZONTAL);
 //        LinearLayoutManager manager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         mRecyclerView.setLayoutManager(manager);
 
         FreeItemDecoration decoration = new FreeItemDecoration();
-        decoration.setBoundary(true, true, true, false);
+        decoration.setBoundary(false, true, true, true);
         mRecyclerView.addItemDecoration(decoration);
         mDownloadInfoList = getData();
         mImageAdapter = new ImageAdapter(this, mDownloadInfoList);
@@ -114,5 +132,42 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }).start();
+    }
+
+    private void initProgress() {
+        mProgressBar = findViewById(R.id.cpb);
+        mSeekBar = findViewById(R.id.seek);
+        mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                mProgressBar.setSecondProgress(progress);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
+        mProgressBar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ObjectAnimator animator = ObjectAnimator.ofInt(mProgressBar, "progress", 0, 100);
+                animator.setDuration(1000);
+                animator.setInterpolator(new LinearInterpolator());
+                animator.start();
+            }
+        });
+    }
+
+    @OnClick(R.id.btn_1)
+    public void onViewClicked() {
+        Intent intent = new Intent(this, CircleImageViewActivity.class);
+        startActivity(intent);
     }
 }
