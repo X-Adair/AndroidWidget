@@ -8,9 +8,11 @@ import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
+import android.graphics.Region;
 import android.support.annotation.IntDef;
 import android.support.v7.widget.AppCompatImageView;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -25,8 +27,8 @@ import java.lang.annotation.RetentionPolicy;
  */
 public class CircleImageView extends AppCompatImageView {
 
-    private static final int TYPE_ARC = 1;//边框内外圆角一致模式
-    private static final int TYPE_WIDTH = 2;//边框圆角宽度与边框宽度一致模式
+    public static final int TYPE_ARC = 1;//边框内外圆角一致模式
+    public static final int TYPE_WIDTH = 2;//边框圆角宽度与边框宽度一致模式
 
     @IntDef({TYPE_ARC, TYPE_WIDTH})
     @Retention(RetentionPolicy.SOURCE)
@@ -147,6 +149,12 @@ public class CircleImageView extends AppCompatImageView {
         canvas.restore();
     }
 
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        return inTouchableArea(event.getX(), event.getY()) && super.onTouchEvent(event);
+    }
+
+
     //初始化
     private void init() {
         mXfermode_DST_IN = new PorterDuffXfermode(PorterDuff.Mode.DST_IN);
@@ -214,7 +222,7 @@ public class CircleImageView extends AppCompatImageView {
             mBorderRectF.bottom = mSrcRectF.bottom + mBorderWidth;
 
             mSrcPath.addCircle(mSrcRectF.centerX(), mSrcRectF.centerY(), mRadius, Path.Direction.CW);
-            if (mCornerType == 1) {
+            if (mCornerType == TYPE_ARC) {
                 mBorderPath.addCircle(mBorderRectF.centerX(), mBorderRectF.centerY(), mRadius + mBorderWidth, Path.Direction.CW);
             } else {
                 mBorderPath.addCircle(mBorderRectF.centerX(), mBorderRectF.centerY(), mRadius + mHalfBorderWidth, Path.Direction.CW);
@@ -254,6 +262,19 @@ public class CircleImageView extends AppCompatImageView {
         calculateRadii();
         calculateRectAndPath();
         invalidate();
+    }
+
+    //点击事件区域
+    private boolean inTouchableArea(float x, float y) {
+        if (isCircle) {
+            return Math.pow(x - mContentRectF.centerX(), 2) + Math.pow(y - mContentRectF.centerY(), 2) <= Math.pow(mRadius + mBorderWidth, 2);
+        } else {
+            Path path = new Path();
+            path.addRoundRect(mContentRectF, mBorderRadii, Path.Direction.CW);
+            Region region = new Region();
+            region.setPath(path, new Region((int) mContentRectF.left, (int) mContentRectF.top, (int) mContentRectF.right, (int) mContentRectF.bottom));
+            return region.contains((int) x, (int) y);
+        }
     }
 
     /**
@@ -417,8 +438,8 @@ public class CircleImageView extends AppCompatImageView {
      */
     public void setBorderWidth(float borderWidth) {
         mBorderWidth = borderWidth;
-        mBorderPaint.setStrokeWidth(mBorderWidth);
         mHalfBorderWidth = mBorderWidth * 0.5f;
+        mBorderPaint.setStrokeWidth(mBorderWidth);
         requestLayout();
     }
 

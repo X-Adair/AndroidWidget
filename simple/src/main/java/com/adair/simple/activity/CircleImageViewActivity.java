@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
+import android.widget.Toast;
 
 import com.adair.simple.R;
 import com.adair.widget.CircleImageView;
@@ -60,10 +61,25 @@ public class CircleImageViewActivity extends AppCompatActivity {
 
         mBorderWidth = DensityUtil.dp2px(getApplicationContext(), 60);
 
+        civ.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(getApplicationContext(),"点击事件",Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        civ.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                Toast.makeText(getApplicationContext(),"长点击事件",Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        });
+
         cbCover.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                civ.setCornerType(isChecked ? 1 : 2);
+                civ.setCornerType(isChecked ? CircleImageView.TYPE_ARC : CircleImageView.TYPE_WIDTH);
             }
         });
         cbCover.setChecked(civ.getCornerType() == 1);
