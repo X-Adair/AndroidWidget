@@ -13,12 +13,12 @@
         android:layout_height="wrap_content"
         android:text="圆形图片" />
 
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/recyclerView"
+    <Button
+        android:id="@+id/btn_2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/colorPrimary"
-        android:visibility="gone" />
+        android:text="GridPager" />
+
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -38,6 +38,10 @@
             android:layout_width="match_parent"
             android:layout_height="20dp" />
 
-
+        <Button
+            android:id="@+id/btn_3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="开始进度" />
     </LinearLayout>
 </LinearLayout>

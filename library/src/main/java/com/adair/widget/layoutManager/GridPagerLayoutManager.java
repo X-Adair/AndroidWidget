@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.logging.Logger;
 
 /**
  * 网格布局,页数翻页
@@ -26,210 +27,235 @@ public class GridPagerLayoutManager extends RecyclerView.LayoutManager {
 
     private static final String TAG = "GridPagerLayoutManager";
 
-    public static final int VERTICAL = 0;           // 垂直滚动
     public static final int HORIZONTAL = 1;         // 水平滚动
+    public static final int VERTICAL = 0;           // 垂直滚动
 
     @IntDef({VERTICAL, HORIZONTAL})
     @Retention(RetentionPolicy.SOURCE)
-    public @interface OrientationType {
-    }            // 滚动类型
-
-    @OrientationType
-    private int mOrientation;                       // 默认水平滚动
-
+    public @interface OrientationType {  // 滚动类型
+    }
 
     private Context mContext;
 
-    //滚动工具类
-    private OrientationHelper mHelper;
+    private int mRows;//有多少行
+    private int mCols;//有多少列
+    @OrientationType
+    private int mOrientation;                       // 默认水平滚动
 
-    private SparseArray<Rect> mItemFrams;//item显示区域的矩形记录
-    private int mRows;//行数
-    private int mColumns;//列数
-    private int mOnePageSize;//每页显示数量
+    private int mPageSize;//每页显示item数量
+    private int mPageNum;//总页数
 
-    private int mItemWidth;//每一条item宽度
-    private int mItemHeight;//每一个item的高度
+    private int mItemWidth = 0;
+    private int mItemHeight = 0;
 
-    private int mMaxScrollX;//x轴最大可滑动偏移量
-    private int mMaxScrollY;//y轴最大可滑动偏移量
+    private int mMaxOffsetX;//最大X滚动距离
+    private int mMaxOffsetY;//最大Y滚动距离
 
-    private int offsetX;//x轴偏移量
-    private int offsetY;//y轴偏移量
+    private int mOffsetX = 0;//当前X滑动距离
+    private int mOffsetY = 0;//当前Y滑动距离
 
-
-    private int mPengdingScrollPosition;
 
     public GridPagerLayoutManager(@IntRange(from = 1, to = 100) int rows,
                                   @IntRange(from = 1, to = 100) int columns,
                                   @OrientationType int orientation) {
-        mItemFrams = new SparseArray<>();
         mRows = rows;
-        mColumns = columns;
-        mOnePageSize = mRows * mColumns;
+        mCols = columns;
         mOrientation = orientation;
+        mPageSize = rows * columns;
     }
 
     @Override
     public RecyclerView.LayoutParams generateDefaultLayoutParams() {
-        return new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        return new RecyclerView.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+    }
+
+    @Override
+    public boolean canScrollHorizontally() {
+        return mOrientation == HORIZONTAL;
+    }
+
+    @Override
+    public boolean canScrollVertically() {
+        return mOrientation == VERTICAL;
     }
 
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        //没有数据直接移除所有View并返回
-        if (getItemCount() == 0) {
+        if (getItemCount() == 0 || state.isPreLayout()) {//没有item，直接返回
             removeAndRecycleAllViews(recycler);
             return;
         }
-        //state.isPreLayout() 是判断之前布局时动画有没有处理结束，没有结束返回
-        if (state.isPreLayout()) {
-            return;
-        }
-        if (mHelper == null) {
-            createHelper();
-        }
+
         detachAndScrapAttachedViews(recycler);
-
-        //计算总的页数
-        int totalPage = getItemCount() / mOnePageSize;
-        if (getItemCount() % mOnePageSize > 0) {
-            totalPage++;
-        }
-        //计算偏移量及限制最大滑动距离
-        if (canScrollHorizontally()) {
-            mMaxScrollX = (totalPage - 1) * mHelper.getTotalSpace();
-            mMaxScrollY = 0;
-            offsetY = 0;
-            if (offsetX > mMaxScrollX) {
-                offsetX = mMaxScrollX;
-            }
-        } else {
-            mMaxScrollX = 0;
-            offsetX = 0;
-            mMaxScrollY = (totalPage - 1) * mHelper.getTotalSpace();
-            if (offsetY > mMaxScrollY) {
-                offsetY = mMaxScrollY;
-            }
-        }
-
-        if (mItemWidth <= 0) {
-            mItemWidth = getAvailableWidth() / mColumns;
-        }
-
-        if (mItemHeight <= 0) {
-            mItemHeight = getAvailableHeight() / mRows;
-        }
-
-        //先添加显示2页的数据量
-        for (int i = 0; i < mOnePageSize * 2; i++) {
-            getItemFrameByPosition(i);
-        }
-
-        if (offsetX == 0 && offsetY == 0) {
-            for (int i = 0; i < mOnePageSize; i++) {
-                if (i >= getItemCount()) break;
-                View child = recycler.getViewForPosition(i);
-                addView(child);
-                measureChildWithMargins(child, 0, 0);
-            }
-        }
-        fillItem(recycler, state);
-    }
-
-    private void fillItem(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        if (state.isPreLayout()) {
-            return;
-        }
-
-        Rect displayRect = new Rect(offsetX - mItemWidth, offsetY - mItemHeight, getAvailableWidth() + offsetX + mItemWidth, getAvailableHeight() + offsetY + mItemHeight);
-        //取交集,限制
-        displayRect.intersect(0, 0, mMaxScrollX + getAvailableWidth(), mMaxScrollY + getAvailableHeight());
-        int startPos = 0;
-
-        int pageIndex = getPageIndexByOffset();
-
-
-    }
-
-    private int getPageIndexByOffset() {
-        return 0;
-    }
-
-
-    //获取某一个Item在界面的所在位置矩形
-    private Rect getItemFrameByPosition(int position) {
-        Rect rect = mItemFrams.get(position);
-        if (null == rect) {
-            rect = new Rect();
-
-            int page = position / mOnePageSize;     //计算当前item在第几页
-            int pagePos = position % mOnePageSize;  //在所处页的第几项
-            int row = pagePos / mColumns;           // 获取所在行
-            int col = pagePos - (row * mColumns);   // 获取所在列
-
-            int offsetX = 0;//左上角偏移量
-            int offsetY = 0;//top偏移量
-
-            if (canScrollHorizontally()) {
-                offsetX += mHelper.getTotalSpace() * page;
-            } else {
-                offsetY += mHelper.getTotalSpace() * page;
-            }
-
-            offsetX += (col * mItemWidth);
-            offsetY += (row * mItemHeight);
-
-            rect.set(offsetX, offsetY, offsetX + mItemWidth, offsetY + mItemHeight);
-            mItemFrams.put(position, rect);
-        }
-        return rect;
-    }
-
-    //获取可用的RecyclerView宽度
-    private int getAvailableWidth() {
-        return getWidth() - getPaddingLeft() - getPaddingRight();
-    }
-
-    //获取可用的RecyclerView高度
-    private int getAvailableHeight() {
-        return getHeight() - getPaddingTop() - getPaddingBottom();
-    }
-
-    /**
-     * 允许横向滑动
-     *
-     * @return
-     */
-    @Override
-    public boolean canScrollHorizontally() {
-        return true;
-    }
-
-    /**
-     * 禁止垂直滑动
-     *
-     * @return
-     */
-    @Override
-    public boolean canScrollVertically() {
-        return false;
+        //获取总页数
+        mPageNum = getPageNum();
+        mMaxOffsetX = (mPageNum - 1) * getWidth();
+        mMaxOffsetY = (mPageNum - 1) * getHeight();
+        //获取每个item的宽度
+        mItemWidth = getUsableWidth() / mCols;
+        //获取每个item的高度
+        mItemHeight = getUsableHeight() / mRows;
+        addViews(recycler, state);
     }
 
 
     @Override
     public int scrollHorizontallyBy(int dx, RecyclerView.Recycler recycler, RecyclerView.State state) {
+        detachAndScrapAttachedViews(recycler);
+        if (mOffsetX + dx > mMaxOffsetX) {
+            dx = mMaxOffsetX - mOffsetX;
+        }
+        if (mOffsetX + dx < 0) {
+            dx = 0 - mOffsetX;
+        }
+        mOffsetX += dx;
         offsetChildrenHorizontal(-dx);
-        offsetX -= dx;
-        return -dx;
+        addViews(recycler, state);
+        return dx;
     }
 
-    private void createHelper() {
-        if (mOrientation == HORIZONTAL) {
-            mHelper = OrientationHelper.createHorizontalHelper(this);
+
+    @Override
+    public int scrollVerticallyBy(int dy, RecyclerView.Recycler recycler, RecyclerView.State state) {
+        detachAndScrapAttachedViews(recycler);
+        if (mOffsetY + dy > mMaxOffsetY) {
+            dy = mMaxOffsetY - mOffsetY;
+        }
+        if (mOffsetY + dy < 0) {
+            dy = 0 - mOffsetY;
+        }
+        mOffsetY += dy;
+        offsetChildrenVertical(-dy);
+        addViews(recycler, state);
+        return dy;
+    }
+
+    //================================私有方法=======================================================
+    //获取总页数
+    private int getPageNum() {
+        int itemCount = getItemCount();
+        int pageNum;
+        if (itemCount % mPageSize == 0) {
+            pageNum = getItemCount() / mPageSize;
         } else {
-            mHelper = OrientationHelper.createVerticalHelper(this);
+            pageNum = getItemCount() / mPageSize + 1;
+        }
+        return pageNum;
+    }
+
+    private void addViews(RecyclerView.Recycler recycler, RecyclerView.State state) {
+        if (state.isPreLayout()) {
+            return;
+        }
+        //显示当前页和下一页的View
+        for (int i = 0; i < getChildCount(); i++) {
+            View childView = getChildAt(i);
+            if (canScrollHorizontally()) {
+                int left = getDecoratedLeft(childView);
+                int right = getDecoratedRight(childView);
+                if (right < mOffsetX || left > mOffsetX + getWidth()) {
+                    removeAndRecycleView(childView, recycler);
+                }
+            } else if (canScrollVertically()) {
+                int top = getDecoratedTop(childView);
+                int bottom = getDecoratedBottom(childView);
+                if (bottom < mOffsetY || top > mOffsetY + getHeight()) {
+                    removeAndRecycleView(childView, recycler);
+                }
+            }
+        }
+
+        int pageIndex;
+        int startViewIndex = 0;
+        int endViewIndex = 0;
+        if (canScrollHorizontally()) {
+            pageIndex = mOffsetX / getWidth();
+            startViewIndex = pageIndex * mPageSize;
+            endViewIndex = (pageIndex + 2) * mPageSize;
+            if (endViewIndex > getItemCount()) {
+                endViewIndex = getItemCount();
+            }
+        } else if (canScrollVertically()) {
+            pageIndex = mOffsetY / getHeight();
+            startViewIndex = pageIndex * mPageSize;
+            endViewIndex = (pageIndex + 2) * mPageSize;
+            if (endViewIndex > getItemCount()) {
+                endViewIndex = getItemCount();
+            }
+        }
+        for (int i = startViewIndex; i < endViewIndex; i++) {
+            int page = i / mPageSize;
+            int pagePos = i % mPageSize;
+            int cols = pagePos % mCols;
+            int rows = pagePos / mCols;
+            int left, right, top, bottom;
+            if (canScrollHorizontally()) {
+                left = getWidth() * page + getPaddingLeft() + cols * mItemWidth;
+                right = left + mItemWidth;
+                top = getPaddingTop() + rows * mItemHeight;
+                bottom = top + mItemHeight;
+                View childView = recycler.getViewForPosition(i);
+                addView(childView);
+                measureChildWithMargins(childView, getUsableWidth() - mItemWidth, getUsableHeight() - mItemHeight);
+                layoutDecoratedWithMargins(childView, left - mOffsetX, top, right - mOffsetX, bottom);
+            } else {
+                left = getPaddingLeft() + cols * mItemWidth;
+                right = left + mItemWidth;
+                top = getHeight() * page + getPaddingTop() + rows * mItemHeight;
+                bottom = top + mItemHeight;
+                View childView = recycler.getViewForPosition(i);
+                addView(childView);
+                measureChildWithMargins(childView, getUsableWidth() - mItemWidth, getUsableHeight() - mItemHeight);
+                layoutDecoratedWithMargins(childView, left, top - mOffsetY, right, bottom - mOffsetY);
+            }
         }
     }
 
+
+    //================================通用方法=======================================================
+
+    /**
+     * 获取可用的宽度
+     *
+     * @return 宽度 - padding
+     */
+    private int getUsableWidth() {
+        return getWidth() - getPaddingLeft() - getPaddingRight();
+    }
+
+    /**
+     * 获取可用的高度
+     *
+     * @return 高度 - padding
+     */
+    private int getUsableHeight() {
+        return getHeight() - getPaddingTop() - getPaddingBottom();
+    }
+
+
+    /**
+     * 获取某个childView在水平方向所占的空间
+     *
+     * @param view
+     * @return
+     */
+    private int getDecoratedMeasurementHorizontal(View view) {
+        final RecyclerView.LayoutParams params = (RecyclerView.LayoutParams)
+                view.getLayoutParams();
+        return getDecoratedMeasuredWidth(view) + params.leftMargin
+                + params.rightMargin;
+    }
+
+    /**
+     * 获取某个childView在竖直方向所占的空间
+     *
+     * @param view
+     * @return
+     */
+    private int getDecoratedMeasurementVertical(View view) {
+        final RecyclerView.LayoutParams params = (RecyclerView.LayoutParams)
+                view.getLayoutParams();
+        return getDecoratedMeasuredHeight(view) + params.topMargin
+                + params.bottomMargin;
+    }
 }

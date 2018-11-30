@@ -5,6 +5,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -58,7 +59,6 @@ public class CircleImageViewActivity extends AppCompatActivity {
         }
         ActionBar actionBar = getSupportActionBar();
         actionBar.hide();
-
         mBorderWidth = DensityUtil.dp2px(getApplicationContext(), 60);
 
         civ.setOnClickListener(new View.OnClickListener() {
